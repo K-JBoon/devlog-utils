@@ -1,0 +1,44 @@
+#!/bin/bash
+seq=$1
+idea=$2
+commit_hash=$3
+exit_code=$4
+output_file=$5
+command=$6
+devlog_dir=$7
+
+# Get file changes from git
+files_changed=$(git show --name-only --format="" "$commit_hash" | tr '\n' ',' | sed 's/,$//')
+files_created=$(git show --diff-filter=A --name-only --format="" "$commit_hash" | tr '\n' ',' | sed 's/,$//')
+files_deleted=$(git show --diff-filter=D --name-only --format="" "$commit_hash" | tr '\n' ',' | sed 's/,$//')
+
+# Generate TOML
+cat > "$devlog_dir/${seq}-entry.toml" << EOF
+[metadata]
+timestamp = "$(date -Iseconds)"
+sequence = $seq
+description = "$idea"
+project_path = "$(pwd)"
+command = "$command"
+
+[git]
+commit_hash = "$commit_hash"
+branch = "$(git rev-parse --abbrev-ref HEAD)"
+
+[diff]
+files_changed = ["$files_changed"]
+files_created = ["$files_created"]
+files_deleted = ["$files_deleted"]
+diff_content = """
+$(git show --format="" "$commit_hash")
+"""
+
+[output]
+exit_code = $exit_code
+content = """
+$(cat "$output_file")
+"""
+
+[context]
+idea = "$idea"
+EOF

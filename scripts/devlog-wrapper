@@ -1,0 +1,53 @@
+#!/bin/bash
+set -e
+
+# Get the command from script name, including any additional arguments
+script_name=$(basename "$0")
+if [[ $script_name =~ ^(.+)-devlog-(.+)$ ]]; then
+    # Extract command from script name and append any additional arguments
+    # e.g., cargo-devlog-run becomes "cargo run", then add $* for extra args
+    base_command="${BASH_REMATCH[1]} ${BASH_REMATCH[2]}"
+    command="$base_command $*"
+elif [[ "$1" ]]; then
+    # Use all arguments as the command (for direct invocation)
+    command="$*"
+else
+    exit 1
+fi
+
+# Find git root directory
+git_root=$(git rev-parse --show-toplevel)
+if [[ $? -ne 0 ]]; then
+    echo "Error: Not in a git repository"
+    exit 1
+fi
+
+# Get current branch name
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+
+# Set devlog directory
+devlog_dir="$git_root/.devlog/$current_branch"
+mkdir -p "$devlog_dir"
+
+# Prompt for the change
+echo -n "What did you change? "
+read -r idea
+
+# Get next sequence number
+next_seq=$(find "$devlog_dir" -name "*.toml" 2>/dev/null | wc -l | awk '{print $1 + 1}')
+
+# Stage all changes and commit
+git add -A
+git commit -m "devlog: $idea"
+commit_hash=$(git rev-parse HEAD)
+
+# Run command and capture output
+output_file=$(mktemp)
+eval "$command" 2>&1 | tee "$output_file"
+exit_code=${PIPESTATUS[0]}
+
+# Generate devlog entry
+devlog-capture "$next_seq" "$idea" "$commit_hash" "$exit_code" "$output_file" "$command" "$devlog_dir"
+
+rm "$output_file"
+exit $exit_code
