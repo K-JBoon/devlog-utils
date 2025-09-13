@@ -99,9 +99,6 @@ exit_code = 0
 content = """
 # Command output here
 """
-
-[context]
-idea = "Your description of what you're working on"
 ```
 
 ## Workflow Example

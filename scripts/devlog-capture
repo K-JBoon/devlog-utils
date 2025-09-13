@@ -18,7 +18,6 @@ cat > "$devlog_dir/${seq}-entry.toml" << EOF
 timestamp = "$(date -Iseconds)"
 sequence = $seq
 description = "$idea"
-project_path = "$(pwd)"
 command = "$command"
 
 [git]
@@ -38,7 +37,4 @@ exit_code = $exit_code
 content = """
 $(cat "$output_file")
 """
-
-[context]
-idea = "$idea"
 EOF
