@@ -22,6 +22,14 @@ if [[ $? -ne 0 ]]; then
     exit 1
 fi
 
+# Check if there are any changes to stage
+git add -A
+if git diff --cached --quiet; then
+    # No changes to commit, just run the command
+    eval "$command"
+    exit $?
+fi
+
 # Get current branch name
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 
@@ -36,8 +44,7 @@ read -r idea
 # Get next sequence number
 next_seq=$(find "$devlog_dir" -name "*.toml" 2>/dev/null | wc -l | awk '{print $1 + 1}')
 
-# Stage all changes and commit
-git add -A
+# Commit the changes
 git commit -m "devlog: $idea"
 commit_hash=$(git rev-parse HEAD)
 
